@@ -132,6 +132,10 @@ if __name__ == "__main__":
 
     cnf = bikeconfig("innsbruck.cnf")
 
+    # Getting current time to build the output file name (before calling API)
+    jsonfile = get_jsonfilename(cnf.livedir, cnf.domain)
+    logging.info(f"JSON file name: {jsonfile}")
+
     logging.info("Calling nextbike API")
     req = get(cnf.baseurl, params = dict(domains = cnf.domain, countries = cnf.country))
     if not req.status_code // 100 == 2:
@@ -143,9 +147,6 @@ if __name__ == "__main__":
     # Create folder structure (if needed)
     today_dir     = get_dir_today(cnf.livedir)
     logging.info(f"Today dir:      {today_dir}")
-
-    jsonfile = get_jsonfilename(cnf.livedir, cnf.domain)
-    logging.info(f"JSON file name: {jsonfile}")
 
     # Make sure the directory where we try to store the data does exist
     if not os.path.isdir(os.path.dirname(jsonfile)):
