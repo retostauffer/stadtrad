@@ -25,7 +25,7 @@ def get_dir_today(dir):
     str : Returns the path to the folder to store todays data.
     """
     if not isinstance(dir, str): raise TypeError("'dir' must be str")
-    x = dt.datetime.now(dt.UTC)
+    x = dt.datetime.now(dt.timezone.utc)
     return os.path.join(dir, x.strftime("%Y"), x.strftime("%m"), x.strftime("%d"))
 
 def get_dir_yesterday(dir):
@@ -41,7 +41,7 @@ def get_dir_yesterday(dir):
     str : Returns the path to the folder where we stored yesterdays data.
     """
     if not isinstance(dir, str): raise TypeError("'dir' must be str")
-    x = dt.datetime.now(dt.UTC) - dt.timedelta(1)
+    x = dt.datetime.now(dt.timezone.utc) - dt.timedelta(1)
     return os.path.join(dir, x.strftime("%Y"), x.strftime("%m"), x.strftime("%d"))
 
 def get_jsonfilename(dir, domain, fileext = "json"):
@@ -64,7 +64,7 @@ def get_jsonfilename(dir, domain, fileext = "json"):
     if not isinstance(dir, str):     raise TypeError("'dir' must be str")
     if not isinstance(domain, str):  raise TypeError("'domain' must be str")
     if not isinstance(fileext, str): raise TypeError("'fileext' must be str")
-    x = dt.datetime.now(dt.UTC)
+    x = dt.datetime.now(dt.timezone.utc)
     return os.path.join(get_dir_today(dir),
                         f"{x.timestamp():.0f}_{domain}.{fileext}")
 
@@ -88,7 +88,7 @@ def archive_yesterday(indir, outdir, domain):
     if not isinstance(outdir, str):    raise TypeError("'outdir' must be str")
 
     logging.info("Archiving data from yesterday")
-    x = dt.datetime.now(dt.UTC) - dt.timedelta(1)
+    x = dt.datetime.now(dt.timezone.utc) - dt.timedelta(1)
     indir   = os.path.join(indir, x.strftime("%Y"), x.strftime("%m"), x.strftime("%d"))
     if not os.path.isdir(indir):
         raise Exception(f"whoops, trying to archive \"{indir}\" but that does not exist.")
