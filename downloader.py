@@ -10,7 +10,7 @@ import datetime as dt
 
 from requests import get
 import logging
-logging.basicConfig(stream = sys.stdout, level = logging.INFO)
+logging.basicConfig(stream = sys.stdout, level = logging.WARNING)
 
 def get_dir_today(dir):
     """get_dir_today(dir)
