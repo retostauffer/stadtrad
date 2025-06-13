@@ -1,6 +1,7 @@
 
 
 
-/archive
 /live
+/archive
+/ziparchive
 /test*.*

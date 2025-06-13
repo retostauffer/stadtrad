@@ -50,9 +50,9 @@ def get_jsonfilename(dir, domain, fileext = "json"):
     Params
     ======
     dir : str
-        Path to the parent directory
+        path to the parent directory
     domain : str
-        Added to the json file name returned.
+        added to the json file name returned.
     fileext : str
         File name extension, defaults to 'json'.
 
@@ -67,6 +67,37 @@ def get_jsonfilename(dir, domain, fileext = "json"):
     x = dt.datetime.now(dt.UTC)
     return os.path.join(get_dir_today(dir),
                         f"{x.timestamp():.0f}_{domain}.{fileext}")
+
+def archive_yesterday(indir, outdir, domain):
+    """archive_yesterday(indir, outdir, domain)
+
+    Params
+    ======
+    indir : str
+        name of the directory with the live data (json files).
+    outdir : str
+        name of the directory where to store the zip file.
+    domain : str
+        added to the json file name returned.
+
+    Return
+    ======
+    Archives the data and removes the original unpacked files.
+    """
+    if not isinstance(indir, str):     raise TypeError("'indir' must be str")
+    if not isinstance(outdir, str):    raise TypeError("'outdir' must be str")
+
+    logging.info("Archiving data from yesterday")
+    x = dt.datetime.now(dt.UTC) - dt.timedelta(1)
+    indir   = os.path.join(indir, x.strftime("%Y"), x.strftime("%m"), x.strftime("%d"))
+    if not os.path.isdir(indir):
+        raise Exception(f"whoops, trying to archive \"{indir}\" but that does not exist.")
+    zipfile = os.path.join(outdir, f"{x.strftime('%Y-%m-%d')}_{domain}")
+    logging.info(f"zipping {indir} to {zipfile}")
+
+    import shutil
+    shutil.make_archive(zipfile, "zip", indir)
+    shutil.rmtree(indir)
 
 class bikeconfig(configparser.ConfigParser):
     def __init__(self, file):
@@ -111,9 +142,7 @@ if __name__ == "__main__":
 
     # Create folder structure (if needed)
     today_dir     = get_dir_today(cnf.livedir)
-    yesterday_dir = get_dir_yesterday(cnf.livedir)
     logging.info(f"Today dir:      {today_dir}")
-    logging.info(f"Yesterday dir:  {yesterday_dir}")
 
     jsonfile = get_jsonfilename(cnf.livedir, cnf.domain)
     logging.info(f"JSON file name: {jsonfile}")
@@ -128,6 +157,16 @@ if __name__ == "__main__":
     # Save data
     with open(jsonfile, "w") as fid:
         fid.write(req.text)
+
+    # Archiving data (if needed)
+    yesterday_dir = get_dir_yesterday(cnf.livedir)
+    logging.info(f"Yesterday dir:  {yesterday_dir}")
+
+    if os.path.isdir(yesterday_dir):
+        archive_yesterday(cnf.livedir, cnf.archivedir, cnf.domain)
+
+
+
 
 
 
