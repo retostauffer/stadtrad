@@ -1,0 +1,12 @@
+
+
+
+
+[general]
+
+baseurl = https://maps.nextbike.net/maps/nextbike-live.flatjson
+domain  = si
+country = AT
+
+livedir    = live
+archivedir = archive
