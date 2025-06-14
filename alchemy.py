@@ -37,7 +37,7 @@ def get_json_files(dir, domain):
     timestamps = []
 
     # Pattern the files must follow
-    tmp = glob("**", root_dir = dir, recursive = True)
+    tmp = glob(os.path.join(dir, "**"), recursive = True)
     tmp.sort()
     for file in tmp:
         tmp = pat.search(file)
