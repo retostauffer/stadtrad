@@ -1,0 +1,143 @@
+---
+title: "Test Auswertung"
+---
+
+```{r, include = FALSE}
+suppressPackageStartupMessages(library("RSQLite"))
+suppressPackageStartupMessages(library("leaflet"))
+suppressPackageStartupMessages(library("sf"))
+suppressPackageStartupMessages(library("dplyr"))
+suppressPackageStartupMessages(library("DT"))
+
+load_data <- function(db = "../stadtrad.db") {
+    con <- dbConnect(SQLite(), db)
+    sql <- "SELECT b.first_seen, b.last_seen, b.number,
+            b.bike_type, b.active, p.name, p.lon, p.lat
+            FROM bikes AS b
+            LEFT JOIN places AS p ON p.id = b.place_id
+            ORDER BY b.number, b.first_seen"
+    res <- dbGetQuery(con, sql)
+    res <- transform(res,
+                     first_seen = as.POSIXct(first_seen, tz = "utc"),
+                     last_seen  = as.POSIXct(last_seen, tz = "utc"))
+    res$time <- round(2 + with(res, as.numeric(last_seen - first_seen, units = "mins")))
+    return(res)
+}
+
+load_available <- function(query = NULL, db = "../stadtrad.db") {
+    con <- dbConnect(SQLite(), db)
+    sql <- "SELECT p.id, p.name, a.timestamp, a.bikes, a.available
+            FROM rentals AS a
+            LEFT JOIN places AS p
+            ON p.id = a.place_id"
+    if (!is.null(query)) sql <- paste(sql, sprintf("WHERE name = \"%s\"", query))
+    res <- dbGetQuery(con, sql)
+    return(transform(res, time = as.POSIXct(timestamp, tz = "utc"), timestamp = NULL))
+}
+###head(load_available())
+###head(load_available("Mitterweg"))
+```
+
+```{r}
+data <- load_data()
+head(data, n = 2)
+```
+
+## Average rest time
+
+
+```{r, fig = TRUE, out.width = "60%", fig.width = 7, fig.height = 12}
+avgtime <- merge(aggregate(time ~ name, data = data, mean),
+                 aggregate(count ~ name, data = transform(data, count = 1), sum), by = "name")
+
+
+avgtime <- subset(avgtime, !grepl("^BIKE", name))
+avgtime <- avgtime[order(avgtime$time, decreasing = TRUE), ]
+par(mar = c(3.1, 15, 2.1, 1))
+barplot(setNames(avgtime$time, avgtime$name), horiz = TRUE, las = 1,
+        main = "Average Standzeit")
+```
+
+## Calculating routes
+
+```{r}
+calcway <- function(x) {
+    dummy <- data.frame(geometry = st_sfc(st_geometrycollection()),
+                        route = NA_character_, time = NA_integer_)
+    if (nrow(x) == 1) return(st_set_geometry(dummy, "geometry"))
+
+    idx <- seq_len(nrow(x) - 1)
+    fun <- function(i) {
+        m <- rbind(x[i, c("lon", "lat")], x[i + 1, c("lon", "lat")])
+        data.frame(geometry = st_sfc(st_linestring(as.matrix(m))),
+                   route = paste(x$name[i], "-", x$name[i + 1]),
+                   time  = round(as.numeric(x$first_seen[i + 1] - x$last_seen[i],
+                                      units = "mins")))
+    }
+    st_set_geometry(do.call(rbind, lapply(seq_len(nrow(x) - 1), fun)), "geometry")
+}
+###test <- calcway(subset(data, number == 340522))
+###leaflet() %>% addTiles() %>% addPolylines(data = test)
+```
+
+
+```{r}
+trips <- as.data.frame(data %>% group_by(number) %>% group_modify(~calcway(.x)))
+
+tripstats <- merge(aggregate(time ~ route, data = trips, function(x) round(mean(x), 1)),
+               aggregate(count ~ route, data = transform(trips, count = 1), sum),
+               by = "route")
+# Taking unique trips to merge geometry to 'tripstats'
+uniq_trips <- unique(subset(trips, select = c(route, geometry)))
+tripstats  <- st_as_sf(merge(uniq_trips, tripstats, by = "route"))
+
+datatable(tripstats[order(tripstats$count, tripstats$time, decreasing = TRUE), ])
+
+```
+
+## Main routes
+
+```{r}
+x <- subset(tripstats, !grepl("BIKE", route))
+#plot(st_geometry(x))
+library("ggplot2")
+ggplot(x) + geom_sf(aes(col = count, lwd = count))
+```
+
+## From and to SOWI
+
+```{r}
+x <- subset(tripstats, grepl("SOWI", route))
+library("ggplot2")
+ggplot(x) + geom_sf(aes(col = count, lwd = count))
+x <- x[order(x$count, decreasing = TRUE), ]
+datatable(x)
+```
+
+## Mitterweg
+
+```{r}
+x <- subset(tripstats, grepl("Mitterweg", route))
+library("ggplot2")
+ggplot(x) + geom_sf(aes(col = count, lwd = count))
+x <- x[order(x$count, decreasing = TRUE), ]
+datatable(x)
+```
+
+## Bikes available
+
+```{r}
+avail <- load_available("Mitterweg")
+avail <- zoo(subset(avail, select = c(bikes, available)), avail$time)
+library("zoo")
+plot(avail, screen = 1, col = 1:2)
+
+as.hourly <- function(x) {
+    as.POSIXct(ceiling(as.numeric(x) / 3600) * 3600, tz = "UTC")
+}
+hrly <- cbind(min    = aggregate(avail, as.hourly, min)[, "available"],
+              median = aggregate(avail, as.hourly, median)[, "available"],
+              max    = aggregate(avail, as.hourly, max)[, "available"])
+plot(hrly, screen = 1, col = c("gray", 1, "gray"))
+
+```

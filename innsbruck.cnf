@@ -10,3 +10,5 @@ country = AT
 
 livedir    = live
 archivedir = archive
+
+connection_string = sqlite+pysqlite:///stadtrad.db

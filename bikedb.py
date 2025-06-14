@@ -76,12 +76,11 @@ class Places:
 
         self.db = db
         self.table = Table("places", db.metadata,
-            Column("id",        Integer,     nullable = False),
+            Column("id",        Integer,     primary_key = True),
             Column("timestamp", Integer,     nullable = True),
             Column("name",      String(100), nullable = False),
             Column("lon",       Float,       nullable = False),
-            Column("lat",       Float,       nullable = False),
-            UniqueConstraint("id", "timestamp", name = "places_index_id_timestamp")
+            Column("lat",       Float,       nullable = False)
         )
 
         # Define insert method (diaclect dependent)

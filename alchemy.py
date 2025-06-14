@@ -60,7 +60,7 @@ if __name__ == "__main__":
     cnf = bikeconfig("innsbruck.cnf")
 
     # Initializing/setting up database connection and data handler
-    db      = BikeDB()
+    db      = BikeDB(cnf.connection_string)
     Places  = Places(db)
     Rentals = Rentals(db)
     Bikes   = Bikes(db)

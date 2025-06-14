@@ -16,6 +16,8 @@ class bikeconfig(configparser.ConfigParser):
         self.domain  = self.get("general", "domain")
         self.country = self.get("general", "country")
 
+        self.connection_string  = self.get("general", "connection_string")
+
         self.livedir = self.get("general", "livedir")
         if not os.path.isdir(self.livedir):
             try:

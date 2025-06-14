@@ -6,3 +6,5 @@
 /ziparchive
 /test*.*
 /__pycache__
+*.html
+/*.db
