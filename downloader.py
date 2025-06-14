@@ -132,13 +132,25 @@ if __name__ == "__main__":
     with open(jsonfile, "w") as fid:
         fid.write(req.text)
 
+    # ---------------------------------------------------------------
+    # Process that file
+    # ---------------------------------------------------------------
+    import subprocess as sub
+    logging.info("Processing the file we just downloaded ...")
+    p = sub.Popen(["python", "alchemy.py", "-f", jsonfile],
+                  stdout = sub.PIPE, stderr = sub.PIPE)
+    out,err = p.communicate()
+    print(out.decode())
+
+
+    # ---------------------------------------------------------------
     # Archiving data (if needed)
+    # ---------------------------------------------------------------
     yesterday_dir = get_dir_yesterday(cnf.livedir)
     logging.info(f"Yesterday dir:  {yesterday_dir}")
 
     if os.path.isdir(yesterday_dir):
         archive_yesterday(cnf.livedir, cnf.archivedir, cnf.domain)
-
 
 
 

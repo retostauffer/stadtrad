@@ -8,6 +8,7 @@ import json
 import re
 from bikedb import *
 import datetime as dt
+from argparse import ArgumentParser
 
 from bikeconfig import bikeconfig
 
@@ -59,6 +60,20 @@ if __name__ == "__main__":
     # Reading config file
     cnf = bikeconfig("innsbruck.cnf")
 
+    # Argparser; used to process single files (live mode)
+    parser = ArgumentParser("Allows to process single files.")
+    parser.add_argument("-f", "--file", type = str, default = None,
+                        help = "If set it must be the path to a valid json file")
+    args = parser.parse_args()
+
+    # If args.file is not None we check if the argument is a valid
+    # file and that the file does exist.
+    if args.file is not None:
+        if not re.match(f"^([0-9]+)_{cnf.domain}\\.json$", os.path.basename(args.file)):
+            raise ValueError("filename -f/--file not matching the expected file name")
+        if not os.path.isfile(args.file):
+            raise FileNotFoundError("file {args.file} not found")
+
     # Initializing/setting up database connection and data handler
     db      = BikeDB(cnf.connection_string)
     Places  = Places(db)
@@ -71,7 +86,13 @@ if __name__ == "__main__":
     no_station = re.compile("^BIKE.*")
 
     # Searching for available files in the live folder
-    files,timestamps = get_json_files(cnf.livedir, cnf.domain)
+    if args.file is not None:
+        tmp = re.search(f"^([0-9]+)_{cnf.domain}\\.json$", os.path.basename(args.file))
+        files      = [args.file]
+        timestamps = [int(tmp.group(1))]
+    else:
+        files,timestamps = get_json_files(cnf.livedir, cnf.domain)
+
     if len(files) > 0:
         print(f"Found {len(files)} json files to process in {cnf.livedir}")
 
