@@ -102,6 +102,23 @@ class Places:
         return self.__insert(self.table).values(timestamp = timestamp, id = _id,
                                                 lon = lon, lat = lat)
 
+    def bulk_insert_or_ignore(self, rows):
+        """bulk_insert_or_ignore(rows)
+
+        Params
+        ======
+        rows : list of dict
+            list of dictionaries defining the rows.
+        """
+        stmt = self.__insert(self.table).values(rows)
+        # Adding ignore rules
+        if self.db.engine.dialect.name == "sqlite":
+            stmt = stmt.prefix_with("OR IGNORE")
+        elif self.db.engine.dialect.name == "mysql":
+            stmt = stmt.prefix_with("IGNORE")
+        with self.db.begin() as con:
+            result = con.execute(stmt)
+
     def insert(self, _id: int, timestamp: int, lon: float, lat: float):
         """insert(_id, timestamp, lon, lat)
 
@@ -238,6 +255,23 @@ class Bikes:
         return self.__insert(self.table).values(timestamp = timestamp, number = number,
                                                 bike_type = bike_type, place_id = place_id,
                                                 active = active, state = state)
+
+    def bulk_insert_or_ignore(self, rows):
+        """bulk_insert_or_ignore(rows)
+
+        Params
+        ======
+        rows : list of dict
+            list of dictionaries defining the rows.
+        """
+        stmt = self.__insert(self.table).values(rows)
+        # Adding ignore rules
+        if self.db.engine.dialect.name == "sqlite":
+            stmt = stmt.prefix_with("OR IGNORE")
+        elif self.db.engine.dialect.name == "mysql":
+            stmt = stmt.prefix_with("IGNORE")
+        with self.db.begin() as con:
+            result = con.execute(stmt)
 
     def insert(self, timestamp: int, number: int, bike_type: int,
                place_id: int, active: bool, state: str):

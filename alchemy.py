@@ -75,27 +75,22 @@ if __name__ == "__main__":
 
             # Inserting places
             print(f"  Found {len(x['places'])} places to be inserted/updated")
+            tmp = []
             for rec in x["places"]:
-                Places.insert_or_ignore(_id = rec["uid"],
-                                        timestamp = timestamps[i],
-                                        lon = rec["lng"],
-                                        lat = rec["lat"])
+                tmp.append(dict(id = rec["uid"],
+                                timestamp = timestamps[i],
+                                lon = rec["lng"],
+                                lat = rec["lat"]))
+            Places.bulk_insert_or_ignore(tmp)
 
             # Inserting places
             print(f"  Found {len(x['bikes'])} bikes to be inserted/updated")
             tmp = []
             for rec in x["bikes"]:
-
-                Bikes.insert_or_ignore(timestamp = timestamps[i],
-                                       number    = int(rec["number"]),
-                                       bike_type = rec["bike_type"],
-                                       active    = rec["active"],
-                                       state     = rec["state"],
-                                       place_id  = rec["place_id"])
-
-                #tmp.append(dict(timestamp = timestamps[i],
-                #                number    = int(rec["number"]),
-                #                bike_type = rec["bike_type"],
-                #                active    = rec["active"],
-                #                state     = rec["state"],
-                #                place_id  = rec["place_id"]))
+                tmp.append(dict(timestamp = timestamps[i],
+                                number    = int(rec["number"]),
+                                bike_type = rec["bike_type"],
+                                active    = rec["active"],
+                                state     = rec["state"],
+                                place_id  = rec["place_id"]))
+            Bikes.bulk_insert_or_ignore(tmp)
