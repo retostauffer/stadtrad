@@ -127,9 +127,9 @@ datatable(x)
 ## Bikes available
 
 ```{r}
+library("zoo")
 avail <- load_available("Mitterweg")
 avail <- zoo(subset(avail, select = c(bikes, available)), avail$time)
-library("zoo")
 plot(avail, screen = 1, col = 1:2)
 
 as.hourly <- function(x) {
