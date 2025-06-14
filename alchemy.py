@@ -9,11 +9,19 @@ import re
 from bikedb import *
 import datetime as dt
 from argparse import ArgumentParser
+from itertools import islice
 
 from bikeconfig import bikeconfig
 
 import logging
 logging.basicConfig(stream = sys.stdout, level = logging.WARNING)
+
+# Slicing required for python 3.6 as the sqlalchemy inserts
+# must be under 999 values.
+def chunked(iterable, chunk_size):
+    it = iter(iterable)
+    while chunk := list(islice(it, chunk_size)):
+        yield chunk
 
 def get_json_files(dir, domain):
     """get_json_files(dir, domain)
@@ -126,8 +134,12 @@ if __name__ == "__main__":
                                         timestamp = timestamps[i],
                                         bikes     = rec["bikes"],
                                         available = rec["bikes_available_to_rent"]))
-            Places.bulk_insert(tmp_places)
-            Rentals.bulk_insert(tmp_rentals)
+
+            # 999 values per batch is absolute maximum
+            for chunk in chunked(tmp_places, 999 // len(tmp_places[0])):
+                Places.bulk_insert(chunk)
+            for chunk in chunked(tmp_rentals, 999 // len(tmp_rentals[0])):
+                Rentals.bulk_insert(chunk)
 
             # For each bike, extract the latest record used to check if a bike
             # status or position has changed since last time.
@@ -172,7 +184,9 @@ if __name__ == "__main__":
             # Execute: Remember we have a unique constraint on 'number' and 'first_seen'
             # which controls whether or not a row is updated, or a new is added (when
             # the bike status changed).
-            Bikes.bulk_insert_or_update(tmp_bikes)
+            # 999 values per batch is absolute maximum
+            for chunk in chunked(tmp_bikes, 999 // len(tmp_bikes[0])):
+                Bikes.bulk_insert_or_update(chunk)
             del tmp_bikes
 
 
