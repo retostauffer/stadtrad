@@ -1,27 +1,101 @@
 
 
 
+import os, sys
+import json
 from bikedb import *
 import datetime as dt
 
-xxx = int(dt.datetime.now(dt.timezone.utc).timestamp())
+from bikeconfig import bikeconfig
 
-db = BikeDB()
+import logging
+logging.basicConfig(stream = sys.stdout, level = logging.WARNING)
 
-Places = Places(db)
-Bikes  = Bikes(db)
+def get_json_files(dir, domain):
+    """get_json_files(dir, domain)
 
-db.create_all()
+    Params
+    ======
+    dir : str
+        Directory containing the json files.
+    domain : str
+        Domain used for file names.
+    """
+    if not isinstance(dir, str): raise TypeError("'dir' must be string")
+    if not os.path.isdir(dir):   raise NotADirectoryError(f"\"{dir}\" does not exist")
+    if not isinstance(domain, str): raise TypeError("'domain' must be string")
 
-Places.insert_or_ignore(_id = 1, timestamp = xxx, lon = 99.11, lat = -134.3)
-Places.insert_or_ignore(_id = 1, timestamp = xxx, lon = 99.11, lat = 343434.34)
-Places.insert_or_ignore(_id = 1, timestamp = xxx, lon = 99.11, lat = 343434.34)
-Places.insert_or_ignore(_id = 1, timestamp = xxx, lon = 99.11, lat = 343434.34)
-Places.insert_or_ignore(_id = 1, timestamp = xxx, lon = 99.11, lat = 343434.34)
+    from re import compile
+    pat = compile(f".*\\/([0-9]+)_{domain}\\.json$")
 
-Bikes.insert_or_ignore(timestamp = xxx,
-             number = 111, bike_type = 150, active = True,
-             state = "ok", place_id = 2002002)
-Bikes.insert_or_ignore(timestamp = xxx,
-             number = 666, bike_type = 150, active = True,
-             state = "ok", place_id = 2002002)
+    from glob import glob
+    files      = []
+    timestamps = []
+
+    # Pattern the files must follow
+    for file in glob("**", root_dir = dir, recursive = True):
+        tmp = pat.search(file)
+        if not tmp: continue
+        files.append(file)
+        timestamps.append(int(tmp.group(1)))
+
+    files = [os.path.join(dir, x) for x in files]
+    return [files, timestamps]
+
+
+
+
+
+# -------------------------------------------------------------------
+# Main part
+# -------------------------------------------------------------------
+if __name__ == "__main__":
+
+    # Reading config file
+    cnf = bikeconfig("innsbruck.cnf")
+
+    # Initializing/setting up database connection and data handler
+    db     = BikeDB()
+    Places = Places(db)
+    Bikes  = Bikes(db)
+    db.create_all()
+
+    # Searching for available files in the live folder
+    files,timestamps = get_json_files(cnf.livedir, cnf.domain)
+    if len(files) > 0:
+        print(f"Found {len(files)} json files to process in {cnf.livedir}")
+
+        for i in range(len(files)):
+            # Parsing the file
+            print(f"Reading file \"{files[i]}\"")
+            with open(files[i], "r") as fid: x = "".join(fid.readlines())
+            x = json.loads(x)
+            if not "places" in x.keys() or not "bikes" in x.keys():
+                raise Exception("not found 'places' or 'bikes' in parsed json data")
+
+            # Inserting places
+            print(f"  Found {len(x['places'])} places to be inserted/updated")
+            for rec in x["places"]:
+                Places.insert_or_ignore(_id = rec["uid"],
+                                        timestamp = timestamps[i],
+                                        lon = rec["lng"],
+                                        lat = rec["lat"])
+
+            # Inserting places
+            print(f"  Found {len(x['bikes'])} bikes to be inserted/updated")
+            tmp = []
+            for rec in x["bikes"]:
+
+                Bikes.insert_or_ignore(timestamp = timestamps[i],
+                                       number    = int(rec["number"]),
+                                       bike_type = rec["bike_type"],
+                                       active    = rec["active"],
+                                       state     = rec["state"],
+                                       place_id  = rec["place_id"])
+
+                #tmp.append(dict(timestamp = timestamps[i],
+                #                number    = int(rec["number"]),
+                #                bike_type = rec["bike_type"],
+                #                active    = rec["active"],
+                #                state     = rec["state"],
+                #                place_id  = rec["place_id"]))

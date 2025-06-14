@@ -9,7 +9,7 @@ from sqlalchemy import Integer, Float, Boolean, String
 # -------------------------------------------------------------------
 class BikeDB:
 
-    def __init__(self, connection_string = "sqlite+pysqlite:///test.db"):
+    def __init__(self, connection_string = "sqlite+pysqlite:///test.db", echo = False):
         """BikeDB(connection_string = "sqlite+pysqlite:///test.db")
 
         Params
@@ -17,6 +17,8 @@ class BikeDB:
         connection_string : str
             connection string for SQLAlchemy. Defaults to
             SQLite 'test.db' for now.
+        echo : bool
+            Forwarded to `sqlalchemy.create_engine()`, defaults to `False`.
 
         Return
         ======
@@ -25,9 +27,11 @@ class BikeDB:
 
         if not isinstance(connection_string, str):
             raise TypeError("'connection_string' must be str")
+        if not isinstance(echo, bool):
+            raise TypeError("'echo' must be bool")
 
         try:
-            self.engine   = create_engine(connection_string, echo=True)
+            self.engine   = create_engine(connection_string, echo = echo)
         except Exception as e:
             raise Exception(e)
         self.metadata = MetaData()
