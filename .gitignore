@@ -4,7 +4,12 @@
 /live
 /archive
 /ziparchive
+/*.db
+/*.Rcheck
+/*.tar.gz
+
+# Development stuff
+/sync.sh
 /test*.*
 /__pycache__
 *.html
-/*.db
