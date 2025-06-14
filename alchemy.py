@@ -20,8 +20,12 @@ logging.basicConfig(stream = sys.stdout, level = logging.WARNING)
 # must be under 999 values.
 def chunked(iterable, chunk_size):
     it = iter(iterable)
-    while chunk := list(islice(it, chunk_size)):
+    while True:
+        chunk = list(islice(it, chunk_size))
+        if not chunk:
+            break
         yield chunk
+
 
 def get_json_files(dir, domain):
     """get_json_files(dir, domain)
