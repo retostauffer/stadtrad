@@ -45,7 +45,6 @@ def get_json_files(dir, domain):
         files.append(file)
         timestamps.append(int(tmp.group(1)))
 
-    files = [os.path.join(dir, x) for x in files]
     return [files, timestamps]
 
 
