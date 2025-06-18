@@ -15,7 +15,7 @@
 #' \dontrun{
 #' library('RSQLite')
 #' con <- dbConnect(SQLite(), "../stadtrad.db")
-#' x <- si_rentals(con)
+#' x <- ri_rentals(con)
 #' head(x)
 #' plot(x)
 #'}
@@ -23,8 +23,8 @@
 #' @importFrom sf st_as_sf
 #' @author Reto
 #' @export
-#' @rdname si_rentals
-si_rentals <- function(con, officials_only = TRUE) {
+#' @rdname ri_rentals
+ri_rentals <- function(con, officials_only = TRUE) {
     stopifnot(
         "'con' must be an SQLiteConnection (for now)" = inherits(con, "SQLiteConnection")
     )
@@ -48,22 +48,23 @@ si_rentals <- function(con, officials_only = TRUE) {
     res <- dbGetQuery(con, sql)
 
     # Converting to sf
+    res$timestamp <- as.POSIXct(res$timestamp, ri_timezone())
     res <- st_as_sf(res, coords = c("lon", "lat"), crs = st_crs(4326))
 
     # Transform and return
-    structure(res, class = c("si_rentals", class(res)))
+    structure(res, class = c("ri_rentals", class(res)))
 }
 
 
-#' @param x object of class `si_rentals`.
+#' @param x object of class `ri_rentals`.
 #' @param \dots forwarded to plot method.
 #' @param bbox object of class `bbox`.
 #'
 #' @importFrom dplyr group_by summarise `%>%`
 #' @importFrom sf st_crop
-#' @exportS3Method plot si_rentals
-#' @rdname si_rentals
-plot.si_rentals <- function(x, bbox = si_bbox(), ...) {
+#' @exportS3Method plot ri_rentals
+#' @rdname ri_rentals
+plot.ri_rentals <- function(x, bbox = ri_bbox(), ...) {
     stopifnot("'bbox' must be of class `bbox`" = inherits(bbox, "bbox"))
     class(x) <- class(x)[-1]
     x <- st_crop(x, bbox)

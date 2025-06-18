@@ -10,7 +10,7 @@
 #' \dontrun{
 #' library('RSQLite')
 #' con <- dbConnect(SQLite(), "../stadtrad.db")
-#' x <- si_routes(con)
+#' x <- ri_routes(con)
 #' head(x)
 #' plot(x)
 #'}
@@ -18,8 +18,8 @@
 #' @importFrom sf st_as_sf
 #' @author Reto
 #' @export
-#' @rdname si_places
-si_routes <- function(con) {
+#' @rdname ri_places
+ri_routes <- function(con) {
     stopifnot(
         "'con' must be an SQLiteConnection (for now)" = inherits(con, "SQLiteConnection")
     )
@@ -54,7 +54,7 @@ calc_trip <- function(x) {
 
     res <- merge(uniq_trips, trips, by = c("route", "geometry"))
     res <- st_set_geometry(res, "geometry")
-    return(structure(res, class = c("si_routes", class(res))))
+    return(structure(res, class = c("ri_routes", class(res))))
 }
 
 # Heler function for calc_trip

@@ -12,7 +12,7 @@
 #' @importFrom sf st_bbox st_crs
 #' @author Reto
 #' @export
-si_bbox <- function(xmin = 11.3, xmax = 11.5, ymin = 47.2, ymax = 47.3) {
+ri_bbox <- function(xmin = 11.3, xmax = 11.5, ymin = 47.2, ymax = 47.3) {
     stopifnot(
         "'xmin' must be single numeric" = is.numeric(xmin) && length(xmin) == 1L,
         "'xmax' must be single numeric" = is.numeric(xmax) && length(xmax) == 1L,

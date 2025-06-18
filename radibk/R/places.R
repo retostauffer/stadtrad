@@ -13,7 +13,7 @@
 #' \dontrun{
 #' library('RSQLite')
 #' con <- dbConnect(SQLite(), "../stadtrad.db")
-#' x <- si_places(con)
+#' x <- ri_places(con)
 #' head(x)
 #' plot(x)
 #'}
@@ -21,8 +21,8 @@
 #' @importFrom sf st_as_sf
 #' @author Reto
 #' @export
-#' @rdname si_places
-si_places <- function(con) {
+#' @rdname ri_places
+ri_places <- function(con) {
     stopifnot(
         "'con' must be an SQLiteConnection (for now)" = inherits(con, "SQLiteConnection")
     )
@@ -35,18 +35,18 @@ si_places <- function(con) {
 
     # Transform and return
     structure(transform(res, official_station = !grepl("^BIKE", name)),
-              class = c("si_places", class(res)))
+              class = c("ri_places", class(res)))
 }
 
 
-#' @param x object of class `si_places`.
+#' @param x object of class `ri_places`.
 #' @param \dots forwarded to plot method.
 #' @param bbox object of class `bbox`.
 #'
 #' @importFrom sf st_crop
-#' @exportS3Method plot si_places
-#' @rdname si_places
-plot.si_places <- function(x, bbox = si_bbox(), ...) {
+#' @exportS3Method plot ri_places
+#' @rdname ri_places
+plot.ri_places <- function(x, bbox = ri_bbox(), ...) {
     stopifnot("'bbox' must be of class `bbox`" = inherits(bbox, "bbox"))
     class(x) <- class(x)[-1]
     x <- st_crop(x, bbox)

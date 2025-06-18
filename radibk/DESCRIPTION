@@ -5,7 +5,7 @@ Authors@R: person(given = "Reto", family = "Stauffer", role = "cre",
                   email = "Reto.Stauffer@uibk.ac.at",
                   comment = c(ORCID = "0000-0002-3798-5507"))
 Description: In summer 25 I began downloading nextbike data on the Stadtrad Innsbruck service via their (nextbike's) public API. Allows to analyze when and where bikes are available, and what the most used commuting routes are.
-Depends: R (>= 4.1.0), sf, dplyr
+Depends: R (>= 4.1.0), sf, dplyr, jsonlite
 Suggests: RSQLite
 License: GPL-3
 Encoding: UTF-8
