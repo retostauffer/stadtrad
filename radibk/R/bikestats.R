@@ -22,16 +22,16 @@
 #' \dontrun{
 #' library('RSQLite')
 #' con <- dbConnect(SQLite(), "../stadtrad.db")
-#' x <- ri_bikes(con)
+#' x <- ri_bikestatstats(con)
 #' head(x)
 #' plot(x)
 #'}
 #'
 #' @importFrom sf st_as_sf
 #' @author Reto
+#' @rdname ri_bikestats
 #' @export
-#' @rdname ri_bikes
-ri_bikes <- function(con) {
+ri_bikestats <- function(con) {
     stopifnot(
         "'con' must be an SQLiteConnection (for now)" = inherits(con, "SQLiteConnection")
     )
@@ -49,16 +49,16 @@ ri_bikes <- function(con) {
     res <- st_as_sf(res, coords = c("avg_lon", "avg_lat"), crs = st_crs(4326))
 
     # Transform and return
-    structure(res, class = c("ri_bikes", class(res)))
+    structure(res, class = c("ri_bikestats", class(res)))
 }
 
 
-#' @param x object of class `ri_bikes`.
+#' @param x object of class `ri_bikestats`.
 #' @param \dots forwarded to plot method.
 #'
-#' @exportS3Method plot ri_bikes
-#' @rdname ri_bikes
-plot.ri_bikes <- function(x, ...) {
+#' @exportS3Method plot ri_bikestats
+#' @rdname ri_bikestats
+plot.ri_bikestats <- function(x, ...) {
     class(x) <- class(x)[-1]
 
     x <- x[order(x$records, decreasing = FALSE), ]

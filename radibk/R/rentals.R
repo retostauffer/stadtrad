@@ -49,6 +49,7 @@ ri_rentals <- function(con, officials_only = TRUE) {
 
     # Converting to sf
     res$timestamp <- as.POSIXct(res$timestamp, ri_timezone())
+    names(res)[names(res) == "timestamp"] <- "datetime"
     res <- st_as_sf(res, coords = c("lon", "lat"), crs = st_crs(4326))
 
     # Transform and return
@@ -57,27 +58,51 @@ ri_rentals <- function(con, officials_only = TRUE) {
 
 
 #' @param x object of class `ri_rentals`.
+#' @param type integer, type of plot (currently `1`, `2`).
 #' @param \dots forwarded to plot method.
 #' @param bbox object of class `bbox`.
 #'
 #' @importFrom dplyr group_by summarise `%>%`
 #' @importFrom sf st_crop
+#' @importFrom zoo zoo
 #' @exportS3Method plot ri_rentals
 #' @rdname ri_rentals
-plot.ri_rentals <- function(x, bbox = ri_bbox(), ...) {
-    stopifnot("'bbox' must be of class `bbox`" = inherits(bbox, "bbox"))
-    class(x) <- class(x)[-1]
-    x <- st_crop(x, bbox)
-    x <- x %>% group_by(geometry) %>% summarise(average = mean(available, na.rm = TRUE))
+plot.ri_rentals <- function(x, type = 2, bbox = ri_bbox(), ...) {
 
-    args <- list(...)
-    if (!"main" %in% names(args)) args$main <- "Average number of bikes"
-    args$x   <- x["average"]
-    if (!"pch" %in% names(args)) args$pch <- 19
-    if (!"cex" %in% names(args))
-        args$cex <- 0.5 + (x$average - min(x$average)) / max(x$average) * 4
+    type <- as.integer(type)[1L]
+    stopifnot(
+        "'type' must evaluate to a single integer" = is.integer(type) && length(type) == 1L
+    )
 
-    do.call(plot, args)
+    # ---------------------------
+    if (type == 1L) {
+        stopifnot("'bbox' must be of class `bbox`" = inherits(bbox, "bbox"))
+
+        class(x) <- class(x)[-1]
+        x <- st_crop(x, bbox)
+        x <- x %>% group_by(geometry) %>% summarise(average = mean(available, na.rm = TRUE))
+
+        args <- list(...)
+        if (!"main" %in% names(args)) args$main <- "Average number of bikes"
+        args$x   <- x["average"]
+        if (!"pch" %in% names(args)) args$pch <- 19
+        if (!"cex" %in% names(args))
+            args$cex <- 0.5 + (x$average - min(x$average)) / max(x$average) * 4
+
+        do.call(plot, args)
+    # ---------------------------
+    } else if (type == 2L) {
+        places <- unique(x$name)
+        places <- places[!grepl("^BIKE", places)]
+        tmp <- lapply(places, function(n) with(subset(x, name == n), zoo(available, datetime)))
+        tmp <- do.call(cbind, tmp)
+        names(tmp) <- places
+        tmp <- aggregate(tmp, as.hourly, mean)
+        plot(tmp, screen = 1, col = seq_len(ncol(tmp)), ...)
+        x <- tmp
+    }
     invisible(x)
 }
+
+
 

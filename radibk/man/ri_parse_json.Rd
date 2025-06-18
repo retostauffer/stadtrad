@@ -14,6 +14,11 @@ files are for a specific domain (\code{"si"} = Stadtrad Innsbruck).}
 
 \item{verbose}{logical. If \code{TRUE} some messages will be printed.}
 }
+\value{
+Named list with two elements containing data.frames with
+the \code{places} information and the \code{bikes} information in a raw format.
+\code{bikes$datetime} is extracted from the JSON file name.
+}
 \description{
 Helper function to parse the original JSON files, or ZIP archives
 with these JSON files.

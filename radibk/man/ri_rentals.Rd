@@ -7,7 +7,7 @@
 \usage{
 ri_rentals(con, officials_only = TRUE)
 
-\method{plot}{ri_rentals}(x, bbox = ri_bbox(), ...)
+\method{plot}{ri_rentals}(x, type = 2, bbox = ri_bbox(), ...)
 }
 \arguments{
 \item{con}{database connection. Typically an \code{SQLiteConnection}
@@ -17,6 +17,8 @@ but should be possible to easily extend to MariaDB/MySQL (untested).}
 parking locations are also included.}
 
 \item{x}{object of class \code{ri_rentals}.}
+
+\item{type}{integer, type of plot (currently \code{1}, \code{2}).}
 
 \item{bbox}{object of class \code{bbox}.}
 
