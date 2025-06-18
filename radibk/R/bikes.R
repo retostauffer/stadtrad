@@ -66,7 +66,9 @@ ri_biketrips <- function(x) {
     fn <- function(x) {
         # Dummy return if we can't calculate trips
         dummy <- data.frame(trip = NA_character_,
-                            line = st_sfc(st_geometrycollection()))
+                            geometry = st_sfc(st_geometrycollection(), crs = st_crs(x)),
+                            start = NA,
+                            end = NA)
         if (nrow(x) < 2L) return(dummy)
 
         # Else calculating the trips
@@ -74,15 +76,17 @@ ri_biketrips <- function(x) {
         co <- st_coordinates(st_geometry(x))
         line <- lapply(i0, function(i) st_linestring(rbind(co[i, ], co[i + 1, ])))
         x <- data.frame(trip = paste(x$name[i0], ">", x$name[i1]),
-                        line = st_sfc(line),
+                        geometry = st_sfc(line, crs = st_crs(x)),
                         start = x$last_seen[i0],
                         end   = x$first_seen[i1])
+        st_geometry(x) <- "geometry"
         x$duration_min <- with(x, round(as.numeric(end - start, unit = "mins")))
+        x$distance_km  <- as.numeric(st_length(x$geometry)) / 1e3
+        x$speed_guess  <- x$distance_km / (x$duration_min / 60)
         return(x)
     }
     x <- x[order(x$first_seen), ] %>% group_by(number) %>%
                 group_modify(~fn(.x)) %>% as.data.frame()
-    st_geometry(x) <- "geometry"
     return(x)
 
 }
