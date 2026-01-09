@@ -4,10 +4,15 @@
 \alias{sr_load_data}
 \title{Loading Data From Database}
 \usage{
-sr_load_data(con, start = NULL, end = NULL, tz = "")
+sr_load_data(con, numbers = NULL, start = NULL, end = NULL, tz = "")
 }
 \arguments{
 \item{con}{An SQLiteConnection object as returned by \link{sr_connect}.}
+
+\item{numbers}{If \code{NULL} (default), the information of all available bikes
+(by number; bike ID) in the defined period (see argument \code{start}/\code{end}) will
+be returned. Can be a numeric/integer vector of length \verb{>0} to limit the
+return to specific bike number(s).}
 
 \item{start}{\code{NULL} or an object which can be converted to POSIXct.
 If set, only data after this point in time are loaded.}

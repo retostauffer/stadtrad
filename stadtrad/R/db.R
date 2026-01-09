@@ -41,6 +41,10 @@ sr_connect <- function(file) {
 #' Loading Data From Database
 #'
 #' @param con An SQLiteConnection object as returned by [sr_connect].
+#' @param numbers If `NULL` (default), the information of all available bikes
+#'        (by number; bike ID) in the defined period (see argument `start`/`end`) will
+#'        be returned. Can be a numeric/integer vector of length `>0` to limit the
+#'        return to specific bike number(s).
 #' @param start `NULL` or an object which can be converted to POSIXct.
 #'        If set, only data after this point in time are loaded.
 #' @param end `NULL` or an object which can be converted to POSIXct.
@@ -53,10 +57,14 @@ sr_connect <- function(file) {
 #' @export
 #'
 #' @importFrom RSQLite dbGetQuery
-sr_load_data <- function(con, start = NULL, end = NULL, tz = "") {
+sr_load_data <- function(con, numbers = NULL, start = NULL, end = NULL, tz = "") {
 
-    stopifnot("argument 'con' must be of class SQLiteConnection" =
-              inherits(con, "SQLiteConnection"))
+    stopifnot(
+        "argument 'con' must be of class SQLiteConnection" = inherits(con, "SQLiteConnection"),
+        "argument 'numbers' must be NULL or a numeric vector of length > 0" =
+            is.null(numbers) | (is.numeric(numbers) & length(numbers) > 0)
+    )
+    if (!is.null(numbers)) numbers <- unique(as.integer(numbers))
 
     if (!is.null(start) & !inherits(start, "POSIXt"))
         start <- tryCatch(as.POSIXct(start[1L], tz = tz),
@@ -76,13 +84,20 @@ sr_load_data <- function(con, start = NULL, end = NULL, tz = "") {
             where <- c(where, sprintf("min(b.first_seen, b.last_seen) < %d", as.integer(start)))
         if (!is.null(end))
             where <- c(where, sprintf("max(b.first_seen, b.last_seen) >= %d", as.integer(end)))
-        if (length(where > 0))
-            sql <- paste(sql, "WHERE", paste(where, collapse = " AND "))
 
-        return(paste(sql, "ORDER BY b.number, b.first_seen"))
+        # Number search: ensure 'number' is handled as integer, not index
+        if (!is.null(numbers))
+            where <- c(where, paste0("b.number + 0 IN (", paste(numbers, collapse = ", "), ")"))
+
+        # Gluing together the where clause
+        if (length(where > 0))
+            sql <- paste(sql, "WHERE", paste(where, collapse = "\n   AND "))
+
+        return(paste(sql, "\n     ORDER BY b.number, b.first_seen"))
     }
 
     sql <- get_query(start, end)
+    cat("------------------\n", sql, "\n----------------\n")
 
     # Requesting data
     data <- tryCatch(dbGetQuery(con, sql),
