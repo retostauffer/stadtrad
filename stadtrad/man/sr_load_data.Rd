@@ -2,9 +2,12 @@
 % Please edit documentation in R/db.R
 \name{sr_load_data}
 \alias{sr_load_data}
+\alias{plot.srbike}
 \title{Loading Data From Database}
 \usage{
 sr_load_data(con, numbers = NULL, start = NULL, end = NULL, tz = "")
+
+\method{plot}{srbike}(x, ...)
 }
 \arguments{
 \item{con}{An SQLiteConnection object as returned by \link{sr_connect}.}
@@ -24,8 +27,30 @@ If set, only data before (or equal) to this time are returned.}
 Used to (i) transform \code{start} and \code{end} to POSIXct if needed,
 as well as to properly convert the data returned.}
 }
+\value{
+If no data are found, \code{NULL} is returned. Else an object of class
+\code{c("srbike", "sf", "data.frame")}, i.e., a simple features data frame
+with an additional stadtrad bike position class to provide S3 support.
+}
 \description{
 Loading Data From Database
+}
+\examples{
+\dontrun{
+## Connecting to database
+con <- sr_connect("stadtrad.db")
+
+## Define date range
+start <- as.POSIXct("2025-12-22 23:00", tz = "Europe/Vienna")
+end   <- as.POSIXct("2025-12-24 01:00", tz = "Europe/Vienna")
+
+## Loading all bike information in time period
+d <- sr_load_data(con, start = start, end = end, tz = "CET") 
+
+## Loading data for one specific bike by ID (number)
+d <- sr_load_data(con, numbers = 340000, start = start, end = end, tz = "CET")
+}
+
 }
 \author{
 Reto
