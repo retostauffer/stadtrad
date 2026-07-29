@@ -1,5 +1,15 @@
 
-
+#' Reading Stadtrad Data
+#'
+#' The REST API returns a single JSON file at the time of the request.
+#' Individual JSON files can be processed using `ri_read_json`. Note that
+#' the name of the file must include an integer, the timestamp of the request.
+#' A series of convenience functions exist to read not only one, but multiple
+#' files at a time. `ri_read_jsons` imports a series of JSON files and returns
+#' a combined data set. If archived in a ZIP file, `ri_read_zip` will read all
+#' available JSON files from that archive. Multiple archive files can be read
+#' using the `ri_read_zips` function.
+#'
 #' @param x character, name/path of the file(s) to be read. See Section
 #'        Details for more information.
 #' @param city_name character of length one, defaults to `"Innsbruck"`. Used to
@@ -47,6 +57,7 @@
 #' @importFrom tibble as_tibble
 #' @importFrom jsonlite read_json
 #'
+#' @rdname ri_read_json
 #' @author Reto
 #' @importFrom parallel mclapply
 #' @export
@@ -55,6 +66,8 @@ ri_read_jsons <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, v
     verbose <- as.integer(verbose)[[1L]]
     if (!is.null(cores)) cores <- as.integer(cores)[[1L]]
     stopifnot(
+        "argument `x` points to at least one non-existing file" = all(file.exists(x)),
+        "argument `x` must all end on .json" = all(grepl("\\.json$", x, ignore.case = TRUE)),
         "argument `cores` must be NULL or integer" =
             is.null(cores) || (is.integer(cores) && length(cores) == 1L),
         "argument `verbose` must evaluate to 0L, 1L, or 2L" = 
@@ -81,7 +94,7 @@ ri_read_jsons <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, v
 
 
 #' @author Reto
-#' @rdname ri_read_jsons
+#' @rdname ri_read_json
 #' @export
 ri_read_json <- function(x, city_name = "Innsbruck", returnclass = c("data.frame", "list"),
                          tz = NULL, verbose = FALSE) {
@@ -142,7 +155,55 @@ ri_read_json <- function(x, city_name = "Innsbruck", returnclass = c("data.frame
 }
 
 
+#' @author Reto
+#' @rdname ri_read_json
+#' @export
+ri_read_zip <- function(x, city_name = "Innsbruck", tz = NULL, verbose = FALSE) {
+    verbose     <- as.logical(verbose)[[1L]]
 
+    stopifnot(
+        "argument `x` not pointing to single existing zip file" = isTRUE(file.exists(x)),
+        "argument `x` must end on zip" = grepl("\\.zip$", x, ignore.case = TRUE),
+        "argument `city_name` must be single character" =
+            is.character(city_name) && length(city_name) == 1L,
+        "argument `verbose` must evaluate to TRUE or FALSE" =
+            isTRUE(verbose) || isFALSE(verbose)
+    )
+
+    if (verbose) message("Extracting json files from \"", x, "\"")
+
+    # Temporary directory to extract the zip file
+    dir.create(tmpdir <- tempfile(pattern = "radibk_"))
+    on.exit(unlink(tmpdir, recursive = TRUE))
+
+    # Unzipping
+    files <- unzip(x, exdir = tmpdir)
+    files <- files[grepl("\\.json$", files, ignore.case = TRUE)]
+
+    x <- ri_read_jsons(files, verbose = verbose)
+    return(x)
+}
+
+
+#' @author Reto
+#' @rdname ri_read_json
+#' @export
+ri_read_zips <- function(x, city_name = "Innsbruck", tz = NULL, verbose = FALSE) {
+    verbose     <- as.integer(verbose)[[1L]]
+
+    stopifnot(
+        "argument `x` points to at least one non-existing file" = all(file.exists(x)),
+        "argument `x` must all end on .zip" = all(grepl("\\.zip$", x, ignore.case = TRUE)),
+        "argument `city_name` must be single character" =
+            is.character(city_name) && length(city_name) == 1L,
+        "argument `verbose` must evaluate to 0L, 1L, or 2L" = 
+            is.integer(verbose) && (verbose >= 0L && verbose <= 2L)
+    )
+
+    x <- lapply(x, ri_read_zip, city_name = city_name,
+                tz = tz, verbose = verbose >= 2L)
+    return(x)
+}
 
 
 

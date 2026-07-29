@@ -2,6 +2,8 @@
 
 export(ri_read_json)
 export(ri_read_jsons)
+export(ri_read_zip)
+export(ri_read_zips)
 importFrom(jsonlite,read_json)
 importFrom(parallel,mclapply)
 importFrom(tibble,as_tibble)
