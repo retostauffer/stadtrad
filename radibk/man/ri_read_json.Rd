@@ -23,9 +23,21 @@ ri_read_json(
   verbose = FALSE
 )
 
-ri_read_zip(x, city_name = "Innsbruck", tz = NULL, verbose = FALSE)
+ri_read_zip(
+  x,
+  city_name = "Innsbruck",
+  cores = NULL,
+  tz = NULL,
+  verbose = FALSE
+)
 
-ri_read_zips(x, city_name = "Innsbruck", tz = NULL, verbose = FALSE)
+ri_read_zips(
+  x,
+  city_name = "Innsbruck",
+  cores = NULL,
+  tz = NULL,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{x}{character, name/path of the file(s) to be read. See Section
@@ -101,7 +113,8 @@ x <- ri_read_zip(zipfiles[1], verbose = TRUE)
 y <- ri_read_zips(zipfiles[1:5], verbose = TRUE)
 
 ## Quick visual inspection
-tinyplot(available_bikes ~ datetime, data = y)
+tinyplot(available_bikes ~ datetime | as.Date(datetime),
+         data = y$cities, type = "l")
 }
 
 }

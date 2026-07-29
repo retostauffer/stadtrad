@@ -67,15 +67,17 @@
 #' y <- ri_read_zips(zipfiles[1:5], verbose = TRUE)
 #'
 #' ## Quick visual inspection
-#' tinyplot(available_bikes ~ datetime, data = y)
+#' tinyplot(available_bikes ~ datetime | as.Date(datetime),
+#'          data = y$cities, type = "l")
 #' }
 #'
+#' @importFrom parallel detectCores mclapply
 #' @importFrom tibble as_tibble
 #' @importFrom jsonlite read_json
+#' @importFrom dplyr bind_rows
 #'
 #' @rdname ri_read_json
 #' @author Reto
-#' @importFrom parallel mclapply
 #' @export
 ri_read_jsons <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, verbose = FALSE) {
 
@@ -97,7 +99,8 @@ ri_read_jsons <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, v
     if (verbose) message("Processing ", length(x), " files on ", cores, " cores")
 
     # Parsing files
-    x <- lapply(x, ri_read_json, city_name = city_name, verbose = verbose >= 2L, tz = tz)
+    x <- mclapply(x, ri_read_json, city_name = city_name, mc.cores = cores,
+                  verbose = verbose >= 2L, tz = tz)
 
     # Combining data
     x <- list(cities  = bind_rows(lapply(x, function(x) x$cities)),
@@ -109,6 +112,8 @@ ri_read_jsons <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, v
 }
 
 
+#' @importFrom dplyr bind_rows
+#'
 #' @author Reto
 #' @rdname ri_read_json
 #' @export
@@ -172,9 +177,10 @@ ri_read_json <- function(x, city_name = "Innsbruck", returnclass = c("data.frame
 
 
 #' @author Reto
+#' @importFrom utils unzip
 #' @rdname ri_read_json
 #' @export
-ri_read_zip <- function(x, city_name = "Innsbruck", tz = NULL, verbose = FALSE) {
+ri_read_zip <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, verbose = FALSE) {
     verbose     <- as.logical(verbose)[[1L]]
 
     stopifnot(
@@ -196,15 +202,17 @@ ri_read_zip <- function(x, city_name = "Innsbruck", tz = NULL, verbose = FALSE) 
     files <- unzip(x, exdir = tmpdir)
     files <- files[grepl("\\.json$", files, ignore.case = TRUE)]
 
-    x <- ri_read_jsons(files, verbose = verbose)
+    x <- ri_read_jsons(files, cores = cores, verbose = verbose)
     return(x)
 }
 
 
+#' @importFrom dplyr bind_rows
+#'
 #' @author Reto
 #' @rdname ri_read_json
 #' @export
-ri_read_zips <- function(x, city_name = "Innsbruck", tz = NULL, verbose = FALSE) {
+ri_read_zips <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, verbose = FALSE) {
     verbose     <- as.integer(verbose)[[1L]]
 
     stopifnot(
@@ -217,7 +225,7 @@ ri_read_zips <- function(x, city_name = "Innsbruck", tz = NULL, verbose = FALSE)
     )
 
     x <- lapply(x, ri_read_zip, city_name = city_name,
-                tz = tz, verbose = verbose >= 2L)
+                cores = cores, tz = tz, verbose = verbose >= 2L)
 
     res <- list()
     for (n in names(x[[1L]]))

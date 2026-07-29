@@ -19,5 +19,6 @@ install: build
 	(cd ../ && R CMD INSTALL radibk_$(VERSION).tar.gz)
 check: build
 	@echo Checking current version: $(VERSION)
-	(cd ../ && R CMD check --as-cran radibk_$(VERSION).tar.gz)
+	(cd ../ && R CMD check radibk_$(VERSION).tar.gz)
+	# The checks run w/ R CMD check (w/o --as-cran)
 
