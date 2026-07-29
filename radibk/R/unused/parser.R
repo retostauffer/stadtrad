@@ -9,6 +9,8 @@
 #' @param domain character, defaults to `"si"`. Ensures the input
 #'        files are for a specific domain (`"si"` = Stadtrad Innsbruck).
 #' @param verbose logical. If `TRUE` some messages will be printed.
+#' @param mc.cores number of cores, defaults to all but two cores if not
+#'        specified otherwise.
 #'
 #' @details If `x` is a ZIP archive it will be unpacked and all JSON files
 #' inside will be parsed. The file names must match the expected pattern
@@ -22,12 +24,16 @@
 #' @importFrom dplyr bind_rows
 #' @author Reto
 #' @export
-ri_parse_json <- function(x, domain = "si", verbose = TRUE) {
+ri_parse_json <- function(x, domain = "si", verbose = TRUE, mc.cores = pmax(1L, detectCores() - 2L)) {
+    mc.cores <- as.integer(mc.cores)[[1]]
+
     stopifnot(
         "'x' must be character" = is.character(x) && length(x) > 0L,
         "'x' must be files ending in json or zip" =
             all(grepl(".*\\.(zip|json)$", x, ignore.case = TRUE)),
-        "'verbose' must be TRUE or FALSE" = isTRUE(verbose) || isFALSE(verbose)
+        "'verbose' must be TRUE or FALSE" = isTRUE(verbose) || isFALSE(verbose),
+        "argument 'mc.cores' must be NULL or positive integer" =
+            is.null(mc.cores) || (is.integer(mc.cores) && mc.cores > 0L)
     )
 
     # check if files even exist
@@ -63,7 +69,7 @@ ri_parse_json <- function(x, domain = "si", verbose = TRUE) {
         list(places = as.data.frame(bind_rows(content$places)),
              bikes  = cbind(data.frame(datetime = d, as.data.frame(bind_rows(content$bikes)))))
     }
-    res <- lapply(files, fn)
+    res <- mclapply(files, fn, mc.cores = mc.cores)
 
     return(list(places = do.call(rbind, lapply(res, function(x) x$places)),
                 bikes  = do.call(rbind, lapply(res, function(x) x$bikes))))
