@@ -10,6 +10,7 @@
 #'        processed).
 #' @param returnclass only used by `ri_read_json`, one of "`data.frame"`
 #'        (tibble data frames, default) or `"list"` (only for `ri_read_json`).
+#' @param tz defaults to `NULL`, forwarded to [ri_timezone()].
 #' @param verbose integer, defaults to `0L` (`FALSE`; silent). If it evaluates to
 #'        `1L` (`TRUE`) it is verbose on function level, `2L` makes the interfaced
 #'        functions verbose, too.
@@ -49,7 +50,7 @@
 #' @author Reto
 #' @importFrom parallel mclapply
 #' @export
-ri_read_jsons <- function(x, city_name = "Innsbruck", cores = NULL, verbose = FALSE) {
+ri_read_jsons <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, verbose = FALSE) {
 
     verbose <- as.integer(verbose)[[1L]]
     if (!is.null(cores)) cores <- as.integer(cores)[[1L]]
@@ -67,7 +68,7 @@ ri_read_jsons <- function(x, city_name = "Innsbruck", cores = NULL, verbose = FA
     if (verbose) message("Processing ", length(x), " files on ", cores, " cores")
 
     # Parsing files
-    x <- lapply(x, ri_read_json, city_name = city_name, verbose = verbose >= 2L)
+    x <- lapply(x, ri_read_json, city_name = city_name, verbose = verbose >= 2L, tz = tz)
 
     # Combining data
     x <- list(cities  = bind_rows(lapply(x, function(x) x$cities)),
@@ -82,8 +83,8 @@ ri_read_jsons <- function(x, city_name = "Innsbruck", cores = NULL, verbose = FA
 #' @author Reto
 #' @rdname ri_read_jsons
 #' @export
-ri_read_json <- function(x, city_name = "Innsbruck",
-                         returnclass = c("data.frame", "list"), verbose = FALSE) {
+ri_read_json <- function(x, city_name = "Innsbruck", returnclass = c("data.frame", "list"),
+                         tz = NULL, verbose = FALSE) {
     verbose     <- as.logical(verbose)[[1L]]
     returnclass <- match.arg(returnclass)
 
@@ -99,7 +100,7 @@ ri_read_json <- function(x, city_name = "Innsbruck",
     # Extracting time information
     ts <- regmatches(basename(x), regexpr("[0-9]+", basename(x)))
     if (length(ts) == 0L) stop("File name (`x`) does not contain integer time stamp")
-    ts <- as.POSIXct(as.integer(ts), tz = "UTC")
+    ts <- as.POSIXct(as.integer(ts), tz = ri_timezone(tz))
     if (verbose) message("Data set valid, data for \"", format(ts, "%Y-%m-%d %H:%M:%S %Z"), "\"")
 
     # Reading the file
