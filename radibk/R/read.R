@@ -25,18 +25,20 @@
 #'        `1L` (`TRUE`) it is verbose on function level, `2L` makes the interfaced
 #'        functions verbose, too.
 #'
-#' @return A named list is returned which by default contains three
-#' tibble data frames, namely `cities`, `places`, and `bikes`. The
-#' date and time information extracted from the file name(s) `x` is
-#' added as a new variable `datetime`.
+#' @return Named list with three tibble data frames: `cities`, `places`, and
+#' `bikes`. The date and time information extracted from the file name(s) `x`
+#' is added as a new variable `datetime`. All data frames are sorted by
+#' datetime (univariate).
 #'
-#' Calling `ri_read_json` with `returnclass = "list"` the return is also
-#' a named list but with four elements containing the raw data from the json
-#' file subsetted to the city requested, plus one additional element
-#' `datetime` with the timestamp (POSIXt).
+#' There is one exception: Calling `ri_read_json` allows to set `returnclass = "list"`
+#' in which case the return is a named list of length four with mostly raw data,
+#' with the elements `cities`, `places`, and `bikes` as for all the other functions,
+#' except they do not include the datetime information. Instead, the datetime information
+#' is stored on the fourth element `datetime`.
 #'
 #' @examples
 #' \dontrun{
+#' ## Reading JSON files:
 #' ## Find available json files
 #' jsonfiles <- list.jsonfiles(file.path("archive", "foo"), full.names = TRUE)
 #' jsonfiles <- jsonfiles[grepl("^[0-9]+_si.json$", basename(jsonfiles))]
@@ -47,11 +49,25 @@
 #' ## Reading set of json files
 #' y <- ri_read_jsons(jsonfiles[1:3], verbose = TRUE)
 #'
-#' ## Quick check
+#' ## Quick visual inspection
 #' library("tinyplot")
-#' tinyplot(available_bikes ~ datetime, data = x$cities)
+#' tinyplot(available_bikes ~ datetime, data = y$cities)
 #' tinyplot(bikes ~ datetime | name, type = "l",
-#'          data = subset(x$places, !grepl("^BIKE", name)))
+#'          data = subset(y$places, !grepl("^BIKE", name)))
+#'
+#' ## Reading ZIP archive files
+#' ## Find available ZIP files
+#' zipfiles <- list.files("archive", full.names = TRUE)
+#' zipfiles <- zipfiles[grepl("_si\\.zip$", zipfiles)]
+#'
+#' #' ## Reading single ZIP file
+#' x <- ri_read_zip(zipfiles[1], verbose = TRUE)
+#'
+#' #' ## Reading set of ZIP files
+#' y <- ri_read_zips(zipfiles[1:5], verbose = TRUE)
+#'
+#' ## Quick visual inspection
+#' tinyplot(available_bikes ~ datetime, data = y)
 #' }
 #'
 #' @importFrom tibble as_tibble
@@ -202,7 +218,15 @@ ri_read_zips <- function(x, city_name = "Innsbruck", tz = NULL, verbose = FALSE)
 
     x <- lapply(x, ri_read_zip, city_name = city_name,
                 tz = tz, verbose = verbose >= 2L)
-    return(x)
+
+    res <- list()
+    for (n in names(x[[1L]]))
+        res[[n]] <- bind_rows(lapply(x, function(x) x[[n]]))
+
+    print(names(res))
+
+    # Ensure correct order of rows (only based on datetime) and return
+    return(lapply(res, function(x) x[order(x$datetime, decreasing = TRUE), ]))
 }
 
 

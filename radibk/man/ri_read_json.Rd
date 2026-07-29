@@ -49,15 +49,16 @@ functions verbose, too.}
 (tibble data frames, default) or \code{"list"} (only for \code{ri_read_json}).}
 }
 \value{
-A named list is returned which by default contains three
-tibble data frames, namely \code{cities}, \code{places}, and \code{bikes}. The
-date and time information extracted from the file name(s) \code{x} is
-added as a new variable \code{datetime}.
+Named list with three tibble data frames: \code{cities}, \code{places}, and
+\code{bikes}. The date and time information extracted from the file name(s) \code{x}
+is added as a new variable \code{datetime}. All data frames are sorted by
+datetime (univariate).
 
-Calling \code{ri_read_json} with \code{returnclass = "list"} the return is also
-a named list but with four elements containing the raw data from the json
-file subsetted to the city requested, plus one additional element
-\code{datetime} with the timestamp (POSIXt).
+There is one exception: Calling \code{ri_read_json} allows to set \code{returnclass = "list"}
+in which case the return is a named list of length four with mostly raw data,
+with the elements \code{cities}, \code{places}, and \code{bikes} as for all the other functions,
+except they do not include the datetime information. Instead, the datetime information
+is stored on the fourth element \code{datetime}.
 }
 \description{
 The REST API returns a single JSON file at the time of the request.
@@ -71,6 +72,7 @@ using the \code{ri_read_zips} function.
 }
 \examples{
 \dontrun{
+## Reading JSON files:
 ## Find available json files
 jsonfiles <- list.jsonfiles(file.path("archive", "foo"), full.names = TRUE)
 jsonfiles <- jsonfiles[grepl("^[0-9]+_si.json$", basename(jsonfiles))]
@@ -81,11 +83,25 @@ x <- ri_read_json(jsonfiles[1], verbose = TRUE)
 ## Reading set of json files
 y <- ri_read_jsons(jsonfiles[1:3], verbose = TRUE)
 
-## Quick check
+## Quick visual inspection
 library("tinyplot")
-tinyplot(available_bikes ~ datetime, data = x$cities)
+tinyplot(available_bikes ~ datetime, data = y$cities)
 tinyplot(bikes ~ datetime | name, type = "l",
-         data = subset(x$places, !grepl("^BIKE", name)))
+         data = subset(y$places, !grepl("^BIKE", name)))
+
+## Reading ZIP archive files
+## Find available ZIP files
+zipfiles <- list.files("archive", full.names = TRUE)
+zipfiles <- zipfiles[grepl("_si\\\\.zip$", zipfiles)]
+
+#' ## Reading single ZIP file
+x <- ri_read_zip(zipfiles[1], verbose = TRUE)
+
+#' ## Reading set of ZIP files
+y <- ri_read_zips(zipfiles[1:5], verbose = TRUE)
+
+## Quick visual inspection
+tinyplot(available_bikes ~ datetime, data = y)
 }
 
 }
