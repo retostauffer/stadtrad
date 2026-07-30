@@ -154,7 +154,6 @@ ri_read_json <- function(x, city_name = "Innsbruck", returnclass = c("data.frame
     # Extracting places and bikes in that city
     x$places  <- x$places[sapply(x$places, function(x) x$city_id == city_id)]
     place_ids <- sapply(x$places, function(x) x$uid)
-    x$bikes   <- x$bikes[sapply(x$bikes, function(x) x$place_id == place_ids)]
 
     if (verbose)
         message(" - Found ", length(x$places), " places and ",
@@ -162,6 +161,7 @@ ri_read_json <- function(x, city_name = "Innsbruck", returnclass = c("data.frame
 
     # If returnclass is list, return as is
     if (returnclass == "list") {
+        x$bikes    <- x$bikes[sapply(x$bikes, function(x) x$place_id %in% place_ids), ]
         x$datetime <- ts
         return(x)
     }
@@ -169,6 +169,8 @@ ri_read_json <- function(x, city_name = "Innsbruck", returnclass = c("data.frame
     # Else converting to tibble data frames
     x$countries <- NULL # Not needed
     x <- lapply(x, bind_rows)
+
+    x$bikes <- x$bikes[x$bikes$place_id %in% place_ids, ]
 
     # Make numeric (integer)
     x$places$place_type <- as.integer(x$places$place_type)
