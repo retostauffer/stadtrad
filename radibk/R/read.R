@@ -25,10 +25,10 @@
 #'        `1L` (`TRUE`) it is verbose on function level, `2L` makes the interfaced
 #'        functions verbose, too.
 #'
-#' @return Named list with three tibble data frames: `cities`, `places`, and
-#' `bikes`. The date and time information extracted from the file name(s) `x`
-#' is added as a new variable `datetime`. All data frames are sorted by
-#' datetime (univariate).
+#' @return Object of class `ri_data`, a named list with three tibble data
+#' frames: `cities`, `places`, and `bikes`. The date and time information
+#' extracted from the file name(s) `x` is added as a new variable `datetime`.
+#' All data frames are sorted by datetime (univariate).
 #'
 #' There is one exception: Calling `ri_read_json` allows to set `returnclass = "list"`
 #' in which case the return is a named list of length four with mostly raw data,
@@ -108,7 +108,8 @@ ri_read_jsons <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, v
               bikes   = bind_rows(lapply(x, function(x) x$bikes)))
 
     # Ensure correct order of rows (only based on datetime) and return
-    return(lapply(x, function(x) x[order(x$datetime, decreasing = TRUE), ]))
+    return(lapply(x, function(x) x[order(x$datetime, decreasing = TRUE), ]) |>
+                  structure(class = "ri_data"))
 }
 
 
@@ -169,9 +170,12 @@ ri_read_json <- function(x, city_name = "Innsbruck", returnclass = c("data.frame
     x$countries <- NULL # Not needed
     x <- lapply(x, bind_rows)
 
+    # Make numeric (integer)
+    x$places$place_type <- as.integer(x$places$place_type)
+
     # Adding time stamp to all elements
     x <- lapply(x, function(x) { x$datetime <- ts; x })
-    return(x)
+    return(x |> structure(class = "ri_data"))
 
 }
 
@@ -202,8 +206,7 @@ ri_read_zip <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, ver
     files <- unzip(x, exdir = tmpdir)
     files <- files[grepl("\\.json$", files, ignore.case = TRUE)]
 
-    x <- ri_read_jsons(files, cores = cores, verbose = verbose)
-    return(x)
+    return(ri_read_jsons(files, cores = cores, verbose = verbose))
 }
 
 
@@ -231,11 +234,46 @@ ri_read_zips <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, ve
     for (n in names(x[[1L]]))
         res[[n]] <- bind_rows(lapply(x, function(x) x[[n]]))
 
-    print(names(res))
-
     # Ensure correct order of rows (only based on datetime) and return
-    return(lapply(res, function(x) x[order(x$datetime, decreasing = TRUE), ]))
+    return(lapply(res, function(x) x[order(x$datetime, decreasing = TRUE), ]) |>
+           structure(class = "ri_data"))
 }
 
 
+
+#' @param what what to plot.
+#'
+#' @rdname ri_read_json
+#' @exportS3Method plot ri_data
+#' @importFrom tinyplot tinyplot
+plot.ri_data <- function(x, what = c("cities", "places"), ...) {
+
+    what <- match.arg(what, several.ok = TRUE)
+    hold <- par(no.readonly = TRUE); on.exit(par(hold))
+    if (length(what) > 1L) par(ask = TRUE)
+
+    ## Overall avaliable bikes over the entire city
+    if ("cities" %in% what) {
+        dt  <- as.Date(x$cities$datetime)
+        idx <- as.integer(factor(dt))
+        tinyplot(available_bikes ~ datetime | as.Date(datetime), data = x$cities,
+                 xaxt = "n", main = "Citywide total number of available bikes",
+                 theme = "clean2")
+
+        xat  <- if (max(idx) < 5) unique(dt) else pretty(dt)
+        axis(side = 1, padj = 1, at = as.POSIXct(xat, tz = attr(x$cities$datetime, "tzone")),
+             labels = format(xat, "%a\n%y-%m-%d"), lwd = 0)
+        abline(v = as.POSIXct(unique(dt), tz = attr(x$cities$datetime, "tzone")),
+               col = "gray", lty = 2)
+    }
+
+    ## Available bikes at stations, using only known stations
+    if ("places" %in% what) {
+        tmp <- subset(x$places, !grepl("^BIKE", name))
+        tinyplot(bikes_available_to_rent ~ datetime | name, data = tmp,
+                 type = "l", theme = "clean2")
+    }
+
+    invisible(NULL)
+}
 

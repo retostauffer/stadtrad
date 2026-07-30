@@ -5,6 +5,7 @@
 \alias{ri_read_json}
 \alias{ri_read_zip}
 \alias{ri_read_zips}
+\alias{plot.ri_data}
 \title{Reading Stadtrad Data}
 \usage{
 ri_read_jsons(
@@ -38,6 +39,8 @@ ri_read_zips(
   tz = NULL,
   verbose = FALSE
 )
+
+\method{plot}{ri_data}(x, what = c("cities", "places"), ...)
 }
 \arguments{
 \item{x}{character, name/path of the file(s) to be read. See Section
@@ -59,12 +62,14 @@ functions verbose, too.}
 
 \item{returnclass}{only used by \code{ri_read_json}, one of "\verb{data.frame"}
 (tibble data frames, default) or \code{"list"} (only for \code{ri_read_json}).}
+
+\item{what}{what to plot.}
 }
 \value{
-Named list with three tibble data frames: \code{cities}, \code{places}, and
-\code{bikes}. The date and time information extracted from the file name(s) \code{x}
-is added as a new variable \code{datetime}. All data frames are sorted by
-datetime (univariate).
+Object of class \code{ri_data}, a named list with three tibble data
+frames: \code{cities}, \code{places}, and \code{bikes}. The date and time information
+extracted from the file name(s) \code{x} is added as a new variable \code{datetime}.
+All data frames are sorted by datetime (univariate).
 
 There is one exception: Calling \code{ri_read_json} allows to set \code{returnclass = "list"}
 in which case the return is a named list of length four with mostly raw data,
