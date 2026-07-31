@@ -64,6 +64,8 @@ functions verbose, too.}
 (tibble data frames, default) or \code{"list"} (only for \code{ri_read_json}).}
 
 \item{what}{what to plot.}
+
+\item{...}{currently unused.}
 }
 \value{
 Object of class \code{ri_data}, a named list with three tibble data

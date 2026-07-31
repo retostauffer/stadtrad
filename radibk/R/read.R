@@ -244,7 +244,9 @@ ri_read_zips <- function(x, city_name = "Innsbruck", cores = NULL, tz = NULL, ve
 
 
 #' @param what what to plot.
+#' @param ... currently unused.
 #'
+#' @importFrom graphics abline axis barplot par
 #' @rdname ri_read_json
 #' @exportS3Method plot ri_data
 #' @importFrom tinyplot tinyplot

@@ -2,9 +2,15 @@
 % Please edit documentation in R/trips.R
 \name{ri_trips}
 \alias{ri_trips}
+\alias{c.ri_trips}
+\alias{plot.ri_trips}
 \title{Calculating Bike Trips}
 \usage{
 ri_trips(x, cores = NULL, verbose = FALSE, ...)
+
+\method{c}{ri_trips}(..., cores = NULL)
+
+\method{plot}{ri_trips}(x, n = 15L, ...)
 }
 \arguments{
 \item{x}{object of class \code{ri_data} as returned by
@@ -17,7 +23,12 @@ processed).}
 
 \item{verbose}{defaults to \code{FALSE}.}
 
-\item{...}{currently unused.}
+\item{...}{S3 method \code{c.tp_trips}: one or multiple \code{ri_trip}
+objects to be combined. They must have the same time zone and must not
+overlap, else an error is thrown. For S3 method \code{plot.tp_trips}: forwarded
+to barplot function.}
+
+\item{n}{positive integer, defaults to 15L.}
 }
 \value{
 Object of class \code{c("ri_trips", "tbl", "data.frame")}
@@ -36,6 +47,9 @@ as trips starting within the data period but have not finished at
 the end of the period.
 These are later used when combining multiple \code{ri_trips} objects
 (see S3 method \code{c.ri_trips}).
+
+The \code{c.ri_trips} method allows to combine multiple objects of this class.
+Will also resolve potential open trips.
 }
 \description{
 Uses the raw data to calculate bike trips, i.e., calculate
