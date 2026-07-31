@@ -175,10 +175,10 @@ ri_read_json <- function(x, city_name = "Innsbruck", returnclass = c("data.frame
     # Make numeric (integer)
     x$places$place_type <- as.integer(x$places$place_type)
 
+
     # Adding time stamp to all elements
     x <- lapply(x, function(x) { x$datetime <- ts; x })
     return(x |> structure(class = "ri_data"))
-
 }
 
 

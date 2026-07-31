@@ -9,6 +9,9 @@
 #'
 #' @param x object of class `ri_data` as returned by
 #'        [ri_read_jsons()], [ri_read_zip()], or [ri_read_zips()].
+#' @param boundary either `NULL` or a single `sfc_POLYGON` as returned by
+#'        [ri_innsbruck()]. If set all positions not within the polygons
+#'        surface are deleted.
 #' @param cores `NULL` (default) or integer, not used by `ri_read_json`.
 #'        Number of cores to used with `parallel::mclapply`. If `NULL` it takes all but
 #'        two available cores (topped of by the maximum number of json files to be
@@ -42,13 +45,15 @@
 #' @importFrom tibble as_tibble
 #' @export
 #' @author Reto
-ri_trips <- function(x, cores = NULL, verbose = FALSE, ...) {
+ri_trips <- function(x, boundary = ri_innsbruck(), cores = NULL, verbose = FALSE, ...) {
 
     if (!is.null(cores)) cores <- as.integer(cores)[[1L]]
     verbose <- as.logical(verbose)[1L]
 
     stopifnot(
         "argument `x` must be an object of class ri_data" = inherits(x, "ri_data"),
+        "argument `boundary` must be NULL or a single `sfc_POLYGON`" =
+            is.null(boundary) || (inherits(boundary, "sfc_POLYGON") && length(boundary) == 1L),
         "argument `cores` must be NULL or integer" =
             is.null(cores) || (is.integer(cores) && length(cores) == 1L),
         "argument `verbose` must evaluate to TRUE or FALSE" =
@@ -82,6 +87,8 @@ ri_trips <- function(x, cores = NULL, verbose = FALSE, ...) {
     tmp$end_name   <- places$name[end_idx]
     tmp$end_lng    <- places$lng[end_idx]
     tmp$end_lat    <- places$lat[end_idx]
+
+    warning("Idea was to create dedicated sf columns here and then apply boundary filter")
 
     ## (5) Calculating trip duration (rounded to full minutes)
     tmp$duration_min <- as.numeric(tmp$end_datetime - tmp$start_datetime,

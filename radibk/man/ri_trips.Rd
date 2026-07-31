@@ -6,7 +6,7 @@
 \alias{plot.ri_trips}
 \title{Calculating Bike Trips}
 \usage{
-ri_trips(x, cores = NULL, verbose = FALSE, ...)
+ri_trips(x, boundary = ri_innsbruck(), cores = NULL, verbose = FALSE, ...)
 
 \method{c}{ri_trips}(..., cores = NULL)
 
@@ -15,6 +15,10 @@ ri_trips(x, cores = NULL, verbose = FALSE, ...)
 \arguments{
 \item{x}{object of class \code{ri_data} as returned by
 \code{\link[=ri_read_jsons]{ri_read_jsons()}}, \code{\link[=ri_read_zip]{ri_read_zip()}}, or \code{\link[=ri_read_zips]{ri_read_zips()}}.}
+
+\item{boundary}{either \code{NULL} or a single \code{sfc_POLYGON} as returned by
+\code{\link[=ri_innsbruck]{ri_innsbruck()}}. If set all positions not within the polygons
+surface are deleted.}
 
 \item{cores}{\code{NULL} (default) or integer, not used by \code{ri_read_json}.
 Number of cores to used with \code{parallel::mclapply}. If \code{NULL} it takes all but
