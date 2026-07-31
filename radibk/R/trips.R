@@ -16,7 +16,24 @@
 #' @param verbose defaults to `FALSE`.
 #' @param ... currently unused.
 #'
+#' @return Object of class `c("ri_trips", "tbl", "data.frame")`
+#' containing bike trips as well as 'open trips' (see below).
+#' Besides the bike `number` (the identifier) the data frame
+#' contains `*_place_id`, `*_daetetime`, `*_name`, `*_lng`, and `*_lat`
+#' for both the start and the end of the trip. In addition, the trip
+#' duration is reported in minutes (rounded to closest minutes).
 #'
+#' Besides closed trips (where we know the start and end) the data frame
+#' also contains "open trips". These are always added at the start of
+#' the data period (with respect to 'datetime') and end of the data period
+#' and are required to capture potential bike trips which started before
+#' the earliest observation into the period the data covers, as well
+#' as trips starting within the data period but have not finished at
+#' the end of the period.
+#' These are later used when combining multiple `ri_trips` objects
+#' (see S3 method `c.ri_trips`).
+#'
+#' @importFrom tibble as_tibble
 #' @export
 #' @author Reto
 ri_trips <- function(x, cores = NULL, verbose = FALSE, ...) {
@@ -65,8 +82,9 @@ ri_trips <- function(x, cores = NULL, verbose = FALSE, ...) {
                                    units = "mins") |> round()
 
     rownames(tmp) <- NULL
+    tmp <- as_tibble(tmp)
 
-    return(tmp)
+    return(tmp |> structure(class = c("ri_trips", class(tmp))))
 }
 
 calculate_trip <- function(x) {
@@ -82,16 +100,44 @@ calculate_trip <- function(x) {
     warning("I think I have to store first and last observation with NA as start and end to later on combine multiple 'blocks' (days) not to miss trips between archive sets")
 
     ## Generate new data frame with start and end trip location
-    data.frame(number         = x$number[1L],
-               start_place_id = x$place_id[idx],
-               start_datetime = x$datetime[idx],
-               start_name     = NA_character_,
-               start_lng      = NA_real_,
-               start_lat      = NA_real_,
-               end_place_id   = x$place_id[idx + 1],
-               end_datetime   = x$datetime[idx + 1],
-               end_name       = NA_character_,
-               end_lng        = NA_real_,
-               end_lat        = NA_real_)
+    res   <- data.frame(number         = x$number[1L],
+                        start_place_id = x$place_id[idx],
+                        start_datetime = x$datetime[idx],
+                        start_name     = NA_character_,
+                        start_lng      = NA_real_,
+                        start_lat      = NA_real_,
+                        end_place_id   = x$place_id[idx + 1L],
+                        end_datetime   = x$datetime[idx + 1L],
+                        end_name       = NA_character_,
+                        end_lng        = NA_real_,
+                        end_lat        = NA_real_)
+
+    ## Adding open trips
+    start <- data.frame(number         = x$number[1L],
+                        start_place_id = NA_integer_,
+                        start_datetime = NA_real_,
+                        start_name     = NA_character_,
+                        start_lng      = NA_real_,
+                        start_lat      = NA_real_,
+                        end_place_id   = x$place_id[1L],
+                        end_datetime   = x$datetime[1L],
+                        end_name       = NA_character_,
+                        end_lng        = NA_real_,
+                        end_lat        = NA_real_)
+
+    end   <- data.frame(number         = x$number[1L],
+                        start_place_id = x$place_id[nrow(x)],
+                        start_datetime = x$datetime[nrow(x)],
+                        start_name     = NA_character_,
+                        start_lng      = NA_real_,
+                        start_lat      = NA_real_,
+                        end_place_id   = NA_integer_,
+                        end_datetime   = NA_real_,
+                        end_name       = NA_character_,
+                        end_lng        = NA_real_,
+                        end_lat        = NA_real_)
+
+    # Combine open and closed trips and return
+    return(do.call(rbind, list(start, res, end)))
 
 }

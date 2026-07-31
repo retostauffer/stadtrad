@@ -19,6 +19,24 @@ processed).}
 
 \item{...}{currently unused.}
 }
+\value{
+Object of class \code{c("ri_trips", "tbl", "data.frame")}
+containing bike trips as well as 'open trips' (see below).
+Besides the bike \code{number} (the identifier) the data frame
+contains \verb{*_place_id}, \verb{*_daetetime}, \verb{*_name}, \verb{*_lng}, and \verb{*_lat}
+for both the start and the end of the trip. In addition, the trip
+duration is reported in minutes (rounded to closest minutes).
+
+Besides closed trips (where we know the start and end) the data frame
+also contains "open trips". These are always added at the start of
+the data period (with respect to 'datetime') and end of the data period
+and are required to capture potential bike trips which started before
+the earliest observation into the period the data covers, as well
+as trips starting within the data period but have not finished at
+the end of the period.
+These are later used when combining multiple \code{ri_trips} objects
+(see S3 method \code{c.ri_trips}).
+}
 \description{
 Uses the raw data to calculate bike trips, i.e., calculate
 when a bike disapeared at a certain location and then popped up
